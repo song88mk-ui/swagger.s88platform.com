@@ -1,0 +1,64 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Operator API
+        uses: docker/bake-action@v6
+        with:
+          targets: operator-api
+          provenance: false
+
+      - name: Copy index.html
+        run: |
+          cp index.html build/index.html
+
+      - name: Fix permissions
+        run: |
+          chmod -c -R +rX "./build" | while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
+
+      - name: Upload pages artifacts
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./build
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Deploy to Github Pages
+          id: deployment
+          uses: actions/deploy-pages@v4
+
+

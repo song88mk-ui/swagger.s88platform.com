@@ -1,0 +1,792 @@
+openapi: 3.0.0
+info:
+  title: "Song88 Seamless Wallet Integration"
+  version: "1.2.6"
+  contact:
+    email: info@jmj.bet
+    name: Customer Support
+    url: https://jmj.bet
+host: "operator.example.com"
+schemes:
+  - https
+paths:
+  /v1/authentication:
+    post:
+      tags:
+        - Endpoints
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: Authenticate
+      description: |
+        This is invoked to:
+
+          * Get Wallet Balance
+          * Get Bet History
+          * Prior Bet Placement
+
+        Note: x-operator-token will be used to authenticate to your API. Token should not exceed 50 alphanumeric characters.
+      parameters:
+        - name: x-operator-token
+          in: header
+          required: true
+          schema:
+            type: string
+            example: 9c198af4dd31401c992521bcfda38ca6
+      responses:
+        '200':
+          description: |
+            When operator authenticated the token successfully with updated balance.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1000
+                  userId:
+                    type: string
+                    summary: Unique Id of the player
+                    example: 2222
+                  balance:
+                    type: number
+                    format: decimal
+                    summary: Current wallet balance of the player
+                    example: 10000
+                  currencyCode:
+                    type: string
+                    summary: Currency of the player's wallet
+                    example: USD
+                  languageCode:
+                    type: string
+                    summary: Request the list of available languages from dev.
+                    example: EN
+        '400':
+          description: |
+            * 1002 - Invalid Token
+            * 1003 - Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1002
+
+  /v1/bet/placement:
+    post:
+      tags:
+        - Endpoints
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: BetPlacement
+      description: |
+        This is invoked to:
+
+          * Place a bet
+
+        Expected BetStatus: Running
+
+        Note: x-operator-token will be used to authenticate to your API. Token should not exceed 50 alphanumeric characters.
+      parameters:
+        - name: x-operator-token
+          in: header
+          required: true
+          schema:
+            type: string
+            example: 9c198af4dd31401c992521bcfda38ca6
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#definitions/BetPlacementSchema'
+
+      responses:
+        '200':
+          description: |
+            When operator placed the bet successfully with updated balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1000
+                  balance:
+                    type: number
+                    format: decimal
+                    summary: Current wallet balance of the player
+                    example: 9875
+                  stakeReal:
+                    type: number
+                    format: decimal
+                    summary: Amount of bet placed from real money
+                    example: 125
+                  stakeBonus:
+                    type: number
+                    format: decimal
+                    summary: Amount of bet placed from bonus money
+                    example: 0
+                  isFreeBet:
+                    type: boolean
+                    summary: Determines whether the bet is considered as freebet or not
+                    example: false
+        '400':
+          description: |
+            * 1001 - Insufficient Funds
+            * 1002 - Invalid Token
+            * 1003 - Internal Server Error
+            * 1099 - Operator Custom Message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1099
+                  message:
+                    type: string
+                    example: Freebet bonus not allowed (custom error message 1099)
+
+  /v1/bet/settlement:
+    post:
+      tags:
+        - Endpoints
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: BetSettlement
+      description: |
+        This is invoked to:
+
+          * Settle the Running Bet
+          * Re-settle wrongly settled Bet
+
+        Expected BetStatus: Won, Lost, HalfWon, HalfLost, Void
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#definitions/BetSettlementSchema'
+
+      responses:
+        '200':
+          description: |
+            When operator settled the bet successfully with updated balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1000
+                  balance:
+                    type: number
+                    format: decimal
+                    summary: Current wallet balance of the player
+                    example: 10108.75
+        '400':
+          description: |
+            * 1003 - Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1003
+
+  /v1/bet/cancellation:
+    post:
+      tags:
+        - Endpoints
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: BetCancellation
+      description: |
+        This is invoked to:
+
+          * Cancel unsuccessful bet placement
+          * Cancel Running bets that are in violation of risk rules
+
+        Expected BetStatus: Cancelled
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#definitions/BetCancellationSchema'
+
+      responses:
+        '200':
+          description: |
+            When operator cancelled the bet successfully with updated balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1000
+                  balance:
+                    type: number
+                    format: decimal
+                    summary: Current wallet balance of the player
+                    example: 10000
+        '400':
+          description: |
+            * 1003 - Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusId:
+                    type: number
+                    format: int32
+                    example: 1003
+
+definitions:
+  BetPlacementSchema:
+    type: object
+    properties:
+      transactionId:
+        type: string
+        summary: Unique Transaction ID
+        format: uuid
+        example: 3E620DE8-7B7F-4232-9D17-9CFB46BB8A31
+      betId:
+        type: string
+        format: uuid
+        summary: Unique ID assigned for the bet
+        example: 2D9702B5-1DB3-463A-D947-08D78422EF82
+      userId:
+        type: string
+        summary: ID of the User that we received from v1/authentication endpoint.
+        example: 2222
+      currencyCode:
+        type: string
+        summary: Currency Code of the Player's wallet
+        example: USD
+      stake:
+        type: number
+        format: decimal
+        summary: Amount that the player placed on a bet
+        example: 125
+      odds:
+        type: number
+        format: decimal
+        summary: Odds that the bet was placed on
+        example: 1.87
+      betStatus:
+        type: string
+        summary: Status of the bet
+        example: Running
+      stakeTax:
+        type: number
+        format: decimal
+        summary: Refers to a deduction or tax applied to the stake amount before it is placed
+        example: 0.2
+      winningsTax:
+        type: number
+        format: decimal
+        summary: Winnings tax referes to a tax imposed on the winnings a player receives.
+        example: 0.2
+      parlayBonus:
+        type: number
+        format: decimal
+        summary: Additional bonus winnings on parlay of players (this can be configured in our BO)
+        example: 0
+      isBoosted:
+        type: boolean
+        summary: Determines if the player placed a bet on a boosted odds or not
+        example: false
+      transactionDate:
+        type: string
+        format: date-time
+        summary: Date and Time the bet was placed on
+        example: 2021-02-11T02:00:00.000Z
+      oddsRef:
+        type: number
+        format: decimal
+        summary: Original Odds that the bet was placed on. (odds and oddsRef value will be the same if bet wasn't placed on a boosted odds)
+        example: 1.87
+      betSelections:
+        type: array
+        summary: List of Selections under bet
+        uniqueItems: false
+        items:
+          type: object
+          properties:
+            betSelectionId:
+              type: string
+              summary: Unique Id of a Bet Selection
+              example: 4ADC5126-4629-49A9-D967-08D78438E084
+            betSelectionStatus:
+              type: string
+              summary: Status of the Selection
+              example: Running
+            sportId:
+              type: number
+              format: int32
+              summary: Id of the Sport the selection is under
+              example: 1
+            sportName:
+              type: string
+              summary: Name of the sport the selection is under
+              example: Soccer
+            segmentId:
+              type: number
+              format: int32
+              summary: Id of the segment the selection is under
+              example: 393
+            segmentName:
+              type: string
+              summary: Name of the segment the selection is under
+              example: International Clubs
+            leagueId:
+              type: number
+              format: int32
+              summary: Id of the league the selection is under
+              example: 7
+            leagueName:
+              type: string
+              summary: Name of the league the selection is under
+              example: UEFA Champions League
+            fixtureId:
+              type: string
+              summary: Id of the Fixture the selection is under
+              example: 604711342804345617
+            fixtureName:
+              type: string
+              summary: Name of the Fixture the selection is under
+              example: Manchester United vs. Manchester City
+            fixtureStartDate:
+              type: string
+              format: date-time
+              summary: Date and time the Fixture starts
+              example: 2021-02-11T03:00:00.000Z
+            fixtureStatus:
+              type: string
+              summary: Current Status of the Fixture
+              example: Prematch
+            score:
+              type: string
+              summary: Score when the bet was placed
+              example: 0 - 0
+            marketId:
+              type: string
+              summary: Id of the Market the selection is under
+              example: 605340591001173402
+            marketName:
+              type: string
+              summary: Name of the Market the selection is under
+              example: Handicap
+            line:
+              type: string
+              summary: Line of the selection
+              example: -1.25
+            selectionId:
+              type: string
+              summary: Id of the Selection
+              example: 605340591001174027
+            selectionName:
+              type: string
+              summary: Name of the Selection
+              example: Home
+            odds:
+              type: number
+              format: decimal
+              summary: Current Odds of the Selections
+              example: 1.87
+            homeName:
+              type: string
+              summary: Name of the Home Team
+              example: Manchester United
+            awayHome:
+              type: string
+              summary: Name of the Away Team
+              example: Manchester City
+            oddsRef:
+              type: number
+              format: decimal
+              summary: Original Odds that the bet was placed on.
+              example: 1.87
+            marketTemplateId:
+              type: string
+              example: 1
+
+  BetSettlementSchema:
+    type: object
+    properties:
+      transactionId:
+        type: string
+        summary: Unique Transaction ID
+        format: uuid
+        example: 6056FA6A-E773-4D03-AF75-8B86C39973C9
+      betId:
+        type: string
+        format: uuid
+        summary: Unique ID assigned for the bet
+        example: 2D9702B5-1DB3-463A-D947-08D78422EF82
+      userId:
+        type: string
+        summary: ID of the User that we received from v1/authentication endpoint.
+        example: 2222
+      currencyCode:
+        type: string
+        summary: Currency Code of the Player's wallet
+        example: USD
+      payout:
+        type: number
+        format: decimal
+        summary: Winning amount of the Bet
+        example: 169.6
+      nonTaxedPayout:
+        type: number
+        format: decimal
+        summary: The total amount added to player wallet after settlement of the bet less tax.
+        example: 233.75
+      stake:
+        type: number
+        format: decimal
+        summary: Amount that the player placed on a bet
+        example: 125
+      odds:
+        type: number
+        format: decimal
+        summary: Odds that the bet was placed on
+        example: 1.87
+      betStatus:
+        type: string
+        summary: Status of the bet
+        example: Won
+      stakeTax:
+        type: number
+        format: decimal
+        summary: Refers to a deduction or tax applied to the stake amount before it is placed
+        example: 0.2
+      winningsTax:
+        type: number
+        format: decimal
+        summary: Winnings tax referes to a tax imposed on the winnings a player receives.
+        example: 0.2
+      taxedStake:
+        type: number
+        format: decimal
+        summary: The stake amount after the deduction of applicable taxes or fees
+        example: 25
+      taxedWinnings:
+        type: number
+        format: decimal
+        summary: The winnings amount after the deduction of applicable taxes or fees
+        example: 17.4
+      parlayBonusWinnings:
+        type: number
+        format: decimal
+        summary: The additional amount added to the parlay winnings if parlay bonus has been set in BO
+        example: 0
+      parlayBonus:
+        type: number
+        format: decimal
+        summary: Additional bonus winnings on parlay of palyers (this can be configured in our BO)
+        example: 0
+      stakeReal:
+        type: number
+        format: decimal
+        summary: Amount of bet placed from real money
+        example: 125
+      stakeBonus:
+        type: number
+        format: decimal
+        summary: Amount of bet placed from bonus money
+        example: 0
+      stakeRealPayout:
+        type: number
+        format: decimal
+        summary: Amount of payout based on real money
+        example: 169.6
+      stakeBonusPayout:
+        type: number
+        format: decimal
+        summary: Amount of payout based on bonus money
+        example: 0
+      transactionDate:
+        type: string
+        format: date-time
+        summary: Date and time the bet was placed on
+        example: 2021-02-11T05:00:00.000Z
+      betSelections:
+        type: array
+        summary: List of Selections under bet
+        uniqueItems: false
+        items:
+          type: object
+          properties:
+            betSelectionId:
+              type: string
+              summary: Unique Id of a Bet Selection
+              example: 4ADC5126-4629-49A9-D967-08D78438E084
+            betSelectionStatus:
+              type: string
+              summary: Settlement Status of the Selection
+              example: Won
+            sportId:
+              type: number
+              format: int32
+              summary: Id of the Sport the selection is under
+              example: 1
+            sportName:
+              type: string
+              summary: Name of the sport the selection is under
+              example: Soccer
+            segmentId:
+              type: number
+              format: int32
+              summary: Id of the segment the selection is under
+              example: 393
+            segmentName:
+              type: string
+              summary: Name of the segment the selection is under
+              example: International Clubs
+            leagueId:
+              type: number
+              format: int32
+              summary: Id of the league the selection is under
+              example: 7
+            leagueName:
+              type: string
+              summary: Name of the league the selection is under
+              example: UEFA Champions League
+            fixtureId:
+              type: string
+              summary: Id of the Fixture the selection is under
+              example: 604711342804345617
+            fixtureName:
+              type: string
+              summary: Name of the Fixture the selection is under
+              example: Manchester United vs. Manchester City
+            fixtureStartDate:
+              type: string
+              format: date-time
+              summary: Date and time the Fixture starts
+              example: 2021-02-11T03:00:00.000Z
+            fixtureStatus:
+              type: string
+              summary: Current Status of the Fixture
+              example: Prematch
+            score:
+              type: string
+              summary: Score when the bet was placed
+              example: 0 - 0
+            settlementScore:
+              type: string
+              summary: Score when the selection was settled
+              example: 1 - 0
+            marketId:
+              type: string
+              summary: Id of the Market the selection is under
+              example: 605340591001174025
+            marketName:
+              type: string
+              summary: Name of the Market the selection is under
+              example: Handicap
+            line:
+              type: string
+              summary: Line of the selection
+              example: -1.25
+            selectionId:
+              type: string
+              summary: Id of the Selection
+              example: 605340591001174027
+            selectionName:
+              type: string
+              summary: Name of the Selection
+              example: Home
+            odds:
+              type: number
+              format: decimal
+              summary: Current Odds of the Selections
+              example: 1.87
+            homeName:
+              type: string
+              summary: Name of the Home Team
+              example: Manchester United
+            awayHome:
+              type: string
+              summary: Name of the Away Team
+              example: Manchester City
+            deadHeatFactor:
+              type: number
+              format: decimal
+              summary: Value calculated against odds to reduce the payout of player if result of the match is win by dead heat
+              example: 1
+            marketTemplateId:
+              type: string
+              example: 1
+
+  BetCancellationSchema:
+    type: object
+    properties:
+      transactionId:
+        type: string
+        summary: Unique Transaction ID
+        format: uuid
+        example: AB2ABF59-4CBC-4A91-92D2-FD9E80E368A2
+      betId:
+        type: string
+        format: uuid
+        summary: Unique ID assigned for the bet
+        example: 2D9702B5-1DB3-463A-D947-08D78422EF82
+      userId:
+        type: string
+        summary: ID of the User that we received from v1/authentication endpoint.
+        example: 2222
+      currencyCode:
+        type: string
+        summary: Currency Code of the bet placed on
+        example: USD
+      payout:
+        type: number
+        format: decimal
+        summary: Winning amount of the Bet
+        example: 125
+      stake:
+        type: number
+        format: decimal
+        summary: Amount that the player placed on a bet
+        example: 125
+      odds:
+        type: number
+        format: decimal
+        summary: Odds that the bet was placed on
+        example: 1.87
+      betStatus:
+        type: string
+        summary: Settlement status of the bet
+        example: Cancelled
+      transactionDate:
+        type: string
+        format: date-time
+        summary: Date and time the bet was cancelled
+        example: 2021-02-09T03:00:00.000Z
+      betSelections:
+        type: array
+        uniqueItems: false
+        items:
+          type: object
+          properties:
+            betSelectionId:
+              type: string
+              summary: Unique Id of a Bet Selection
+              example: 4ADC5126-4629-49A9-D967-08D78438E084
+            betSelectionStatus:
+              type: string
+              summary: Settlement Status of the Selection
+              example: Cancelled
+            sportId:
+              type: number
+              format: int32
+              summary: Id of the Sport the selection is under
+              example: 1
+            sportName:
+              type: string
+              summary: Name of the sport the selection is under
+              example: Soccer
+            segmentId:
+              type: number
+              format: int32
+              summary: Id of the segment the selection is under
+              example: 393
+            segmentName:
+              type: string
+              summary: Name of the segment the selection is under
+              example: International Clubs
+            leagueId:
+              type: number
+              format: int32
+              summary: Id of the league the selection is under
+              example: 7
+            leagueName:
+              type: string
+              summary: Name of the league the selection is under
+              example: UEFA Champions League
+            fixtureId:
+              type: string
+              summary: Id of the Fixture the selection is under
+              example: 604711342804345617
+            fixtureName:
+              type: string
+              summary: Name of the Fixture the selection is under
+              example: Manchester United vs. Manchester City
+            fixtureStartDate:
+              type: string
+              format: date-time
+              summary: Date and time the Fixture starts
+              example: 2021-02-11T03:00:00.000Z
+            fixtureStatus:
+              type: string
+              summary: Current Status of the Fixture
+              example: Prematch
+            score:
+              type: string
+              summary: Score when the bet was placed
+              example: 0 - 0
+            marketId:
+              type: string
+              summary: Id of the Market the selection is under
+              example: 605340591001174025
+            marketName:
+              type: string
+              summary: Name of the Market the selection is under
+              example: Handicap
+            line:
+              type: string
+              summary: Line of the selection
+              example: -1.25
+            selectionId:
+              type: string
+              summary: Id of the Selection
+              example: 605340591001174027
+            selectionName:
+              type: string
+              summary: Name of the Selection
+              example: Home
+            odds:
+              type: number
+              format: decimal
+              summary: Current Odds of the Selections
+              example: 1.87
+            homeName:
+              type: string
+              summary: Name of the Home Team
+              example: Manchester United
+            awayHome:
+              type: string
+              summary: Name of the Away Team
+              example: Manchester City
+            marketTemplateId:
+              type: string
+              example: 1

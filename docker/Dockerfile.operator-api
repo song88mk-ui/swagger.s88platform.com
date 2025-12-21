@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+
+FROM node:20-alpine AS swagger-cli
+WORKDIR /src
+RUN npm install -g swagger-cli
+
+
+FROM swagger-cli AS build
+COPY swagger-ui ./operator-api
+
+RUN --mount=type=bind,rw,source=specs,target=. \
+  swagger-cli bundle ./operator-api.yaml \
+  --outfile operator-api/swagger.json \
+  --type json
+
+FROM scratch AS out
+COPY --from=build /src/operator-api /
