@@ -36,7 +36,10 @@ jobs:
 
       - name: Copy index.html
         run: |
+          pwd
+          ls -l
           cp index.html build/index.html
+          exit 0
 
       - name: Fix permissions
         run: |
