@@ -34,12 +34,9 @@ jobs:
           targets: operator-api
           provenance: false
 
-      - name: Copy index.html
+      - name: Make index.html
         run: |
-          pwd
-          ls -l
-          cp index.html build/index.html
-          exit 0
+          echo "<html></html>" > build/index.html
 
       - name: Fix permissions
         run: |
