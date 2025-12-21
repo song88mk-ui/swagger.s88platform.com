@@ -5,11 +5,12 @@ WORKDIR /src
 RUN npm install -g swagger-cli
 
 FROM swagger-cli AS build
+WORKDIR /src
 COPY swagger-ui ./operator-api
 
-RUN --mount=type=bind,rw,source=specs,target=. \
-  swagger-cli bundle ./operator-api.yaml \
-  --outfile swagger.json \
+RUN --mount=type=bind,rw,source=specs,target=specs \
+  swagger-cli bundle specs/operator-api.yaml \
+  --outfile operator-api/swagger.json \
   --type json
 
 FROM scratch AS out
