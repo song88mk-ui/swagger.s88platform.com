@@ -6,7 +6,6 @@ info:
     email: info@jmj.bet
     name: Customer Support
     url: https://jmj.bet
-host: "operator.example.com"
 schemes:
   - https
 paths:

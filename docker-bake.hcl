@@ -23,6 +23,9 @@ target "_openapi_docs" {
 
 target "operator-api" {
   dockerfile = "docker/Dockerfile.operator-api"
+  args = {
+    VERSION = "1.2.6"
+  }
   target = "out"
   output = ["type=local,dest=build/operator-api"]
 }

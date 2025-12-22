@@ -4,13 +4,16 @@ FROM node:20-alpine AS swagger-cli
 WORKDIR /src
 RUN npm install -g swagger-cli
 
+ARG VERSION=1.2.6
+
 FROM swagger-cli AS build
 WORKDIR /src
-COPY swagger-ui ./operator-api
+RUN mkdir operator-api
+COPY swagger-ui ./operator-api/${VERSION}
 
 RUN --mount=type=bind,rw,source=specs,target=specs \
-  swagger-cli bundle specs/operator-api.yaml \
-  --outfile operator-api/swagger.json \
+  swagger-cli bundle specs/operator-api-${VERSION}.yaml \
+  --outfile operator-api/${VERSION}/swagger.json \
   --type json
 
 FROM scratch AS out
