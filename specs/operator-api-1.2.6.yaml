@@ -25,7 +25,7 @@ paths:
           * Get Bet History
           * Prior Bet Placement
 
-        Note: x-operator-token will be used to authenticate to your API. Token should not exceed 50 alphanumeric characters.
+        Note: x-operator-token will be used to authenticate to your API. Token should not exceed 100 alphanumeric characters.
       parameters:
         - name: x-operator-token
           in: header
@@ -93,7 +93,7 @@ paths:
 
         Expected BetStatus: Running
 
-        Note: x-operator-token will be used to authenticate to your API. Token should not exceed 50 alphanumeric characters.
+        Note: x-operator-token will be used to authenticate to your API. Token should not exceed 100 alphanumeric characters.
       parameters:
         - name: x-operator-token
           in: header
